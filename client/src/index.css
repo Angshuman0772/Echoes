@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+:root {
+  --echoes-bg: #1f1a33;
+  --echoes-surface: #2a2342;
+  --echoes-text: #e9e4f5;
+  --echoes-muted: #a59fc0;
+  --echoes-subtle: #cfc8e8;
+  --echoes-placeholder: #6f6892;
+  --echoes-thread: #3a3358;
+  --echoes-accent: #e58fb0;
+  --echoes-serif: "Young Serif", serif;
+  --echoes-sans: "Figtree", sans-serif;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    font-family: var(--echoes-sans);
+    background-color: var(--echoes-bg);
+    color: var(--echoes-text);
+  }
+
+  h1 {
+    font-size: var(--text-5xl);
+    font-weight: var(--font-semibold);
+  }
+}
+
+@layer components {
+  .echoes-page {
+    min-height: 100vh;
+    background-color: var(--echoes-bg);
+    color: var(--echoes-text);
+    font-family: var(--echoes-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display-serif {
+    font-family: var(--echoes-serif);
+  }
+
+  .site-nav {
+    color: var(--echoes-muted);
+  }
+
+  .site-nav a {
+    transition: color 150ms ease;
+  }
+
+  .site-nav a:hover,
+  .site-nav .is-active {
+    color: var(--echoes-text);
+  }
+
+  .surface-card {
+    background-color: var(--echoes-surface);
+    border-radius: 1.5rem;
+  }
+
+  .text-muted {
+    color: var(--echoes-muted);
+  }
+
+  .text-subtle {
+    color: var(--echoes-subtle);
+  }
+
+  .serif-title {
+    font-family: var(--echoes-serif);
+    font-size: var(--text-2xl);
+  }
+
+  .composer-input,
+  .composer-note {
+    width: 100%;
+    background-color: transparent;
+    outline: none;
+  }
+
+  .composer-input {
+    font-family: var(--echoes-serif);
+    font-size: var(--text-2xl);
+  }
+
+  .composer-note {
+    resize: none;
+    line-height: 1.625;
+  }
+
+  .composer-input::placeholder,
+  .composer-note::placeholder {
+    color: var(--echoes-placeholder);
+  }
+
+  .button-primary {
+    border-radius: 9999px;
+    background-color: var(--echoes-text);
+    color: var(--echoes-bg);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    transition: transform 150ms ease;
+  }
+
+  .button-primary:hover {
+    transform: scale(1.03);
+  }
+
+  .button-primary:active {
+    transform: scale(0.95);
+  }
+
+  .button-outline {
+    display: inline-block;
+    border-radius: 9999px;
+    box-shadow: inset 0 0 0 1.5px var(--echoes-text);
+    color: var(--echoes-text);
+    font-size: var(--text-sm);
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .button-outline:hover {
+    background-color: var(--echoes-text);
+    color: var(--echoes-bg);
+  }
+
+  .capsule-cover {
+    background-color: var(--echoes-accent);
+    color: var(--echoes-bg);
+  }
+
+  .thread-line {
+    background-color: var(--echoes-thread);
+  }
+
+  .thread-fill {
+    background-color: color-mix(in srgb, var(--echoes-text) 70%, transparent);
+  }
+
+  .entry-dot {
+    height: 1.5rem;
+    width: 1.5rem;
+    border-radius: 9999px;
+  }
+}
