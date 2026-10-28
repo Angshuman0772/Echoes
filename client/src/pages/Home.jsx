@@ -147,16 +147,16 @@ export default function HomePage() {
         // The vertical thread fills as you scroll the entries.
         gsap.fromTo(
           ".thread-fill",
-          { scaleY: 0 },
+          { scaleY: 0, transformOrigin: "top center" },
           {
             scaleY: 1,
-            transformOrigin: "top center",
             ease: "none",
             scrollTrigger: {
               trigger: ".entries",
               start: "top 60%",
-              end: "bottom 70%",
-              scrub: 0.6,
+              end: "bottom 60%",
+              scrub: true,
+              invalidateOnRefresh: true,
             },
           },
         );
@@ -184,7 +184,7 @@ export default function HomePage() {
 
       return () => mm.revert();
     },
-    { scope: root },
+      { scope: root, dependencies: [entries.length], revertOnUpdate: true },
   );
 
   // Recalculate scroll positions when entries are added.
