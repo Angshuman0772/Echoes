@@ -71,7 +71,7 @@ export default function HomePage() {
     };
   }, []);
 
-  // ---------- Page-load sequence + scroll thread ----------
+  // ---------- Page-load sequence ----------
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
@@ -144,47 +144,54 @@ export default function HomePage() {
           delay: 4,
         });
 
-        // The vertical thread fills as you scroll the entries.
-        gsap.fromTo(
-          ".thread-fill",
-          { scaleY: 0, transformOrigin: "top center" },
-          {
-            scaleY: 1,
-            ease: "none",
-            scrollTrigger: {
-              trigger: ".entries",
-              start: "top 60%",
-              end: "bottom 60%",
-              scrub: true,
-              invalidateOnRefresh: true,
-            },
-          },
-        );
-
-        // Each dot lights up with its mood color when the thread reaches it.
-        gsap.utils.toArray(".entry").forEach((el) => {
-          const dot = el.querySelector(".entry-dot");
-          gsap.fromTo(
-            dot,
-            { scale: 0.6, backgroundColor: "#3A3358" },
-            {
-              scale: 1,
-              backgroundColor: dot.dataset.color,
-              duration: 0.6,
-              ease: "back.out(2)",
-              scrollTrigger: {
-                trigger: el,
-                start: "top 65%",
-                toggleActions: "play none none reverse",
-              },
-            },
-          );
-        });
       });
 
       return () => mm.revert();
     },
-      { scope: root, dependencies: [entries.length], revertOnUpdate: true },
+    { scope: root },
+  );
+
+  // ---------- Entry-dependent scroll animations ----------
+  useGSAP(
+    () => {
+      if (!entries.length) return;
+
+      gsap.fromTo(
+        ".thread-fill",
+        { scaleY: 0, transformOrigin: "top center" },
+        {
+          scaleY: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".entries",
+            start: "top 60%",
+            end: "bottom 60%",
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+
+      gsap.utils.toArray(".entry").forEach((el) => {
+        const dot = el.querySelector(".entry-dot");
+        gsap.fromTo(
+          dot,
+          { scale: 0.6, backgroundColor: "#3A3358" },
+          {
+            scale: 1,
+            backgroundColor: dot.dataset.color,
+            duration: 0.6,
+            ease: "back.out(2)",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 65%",
+              toggleActions: "play none none reverse",
+            },
+          },
+        );
+      });
+    },
+    { scope: root, dependencies: [entries.length], revertOnUpdate: true },
   );
 
   // Recalculate scroll positions when entries are added.
