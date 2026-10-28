@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { createEntry, getEntries } from "../api/entry";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -12,52 +13,10 @@ const MOODS = {
   romantic: { label: "Romantic", color: "#E58FB0" },
   peaceful: { label: "Peaceful", color: "#8DBF8A" },
   excited: { label: "Excited", color: "#E2674F" },
-  add: { label: "Add mood", color: "#3A3358" },
 };
 
-// Where the dots sit along the hero thread (0 to 1) and what they say.
-const HERO_STOPS = [
-  { at: 0.12, mood: "melancholic", label: "Dreams" },
-  { at: 0.38, mood: "romantic", label: "Sunset Lover" },
-  { at: 0.62, mood: "joyful", label: "Holocene" },
-  { at: 0.86, mood: "excited", label: "Your next song" },
-];
-
-// Replace with data from your Express API.
-const SAMPLE_ENTRIES = [
-  {
-    id: 1,
-    song: "Dreams",
-    artist: "Fleetwood Mac",
-    mood: "melancholic",
-    date: "Oct 24",
-    note: "Played on repeat during the long bus ride back after exams.",
-  },
-  {
-    id: 2,
-    song: "Sunset Lover",
-    artist: "Petit Biscuit",
-    mood: "romantic",
-    date: "Oct 19",
-    note: "Rooftop, golden hour, nobody talking. It was enough.",
-  },
-  {
-    id: 3,
-    song: "Holocene",
-    artist: "Bon Iver",
-    mood: "joyful",
-    date: "Oct 11",
-    note: "First quiet morning in weeks. Felt like starting over.",
-  },
-  {
-    id: 4,
-    song: "Mr. Brightside",
-    artist: "The Killers",
-    mood: "excited",
-    date: "Oct 02",
-    note: "Hostel night, everyone screaming the chorus off-key.",
-  },
-];
+// Where database entries sit along the hero thread (0 to 1).
+const HERO_POSITIONS = [0.12, 0.38, 0.62, 0.86];
 
 const reduceMotion = () =>
   typeof window !== "undefined" &&
@@ -68,7 +27,11 @@ export default function HomePage() {
   const extraRef = useRef(null);
   const capsuleCover = useRef(null);
 
-  const [entries, setEntries] = useState(SAMPLE_ENTRIES);
+  const [entries, setEntries] = useState([]);
+  const [capsuleEntry, setCapsuleEntry] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     song: "",
     artist: "",
@@ -76,6 +39,37 @@ export default function HomePage() {
     mood: "joyful",
   });
   const [opened, setOpened] = useState(false);
+  const heroStops = entries
+    .slice(0, HERO_POSITIONS.length)
+    .map((entry, index) => ({
+      ...entry,
+      at: HERO_POSITIONS[index],
+    }));
+
+  // --------- Load entries from the database ----------
+  useEffect(() => {
+    let active = true;
+
+    getEntries()
+      .then((data) => {
+        if (active) {
+          setEntries(data);
+          setCapsuleEntry(
+            data[Math.floor(Math.random() * data.length)] || null,
+          );
+        }
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message);
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // ---------- Page-load sequence + scroll thread ----------
   useGSAP(
@@ -89,7 +83,7 @@ export default function HomePage() {
         // Place each stop on the path
         const stops = gsap.utils.toArray(".hero-stop");
         stops.forEach((el, i) => {
-          const p = path.getPointAtLength(len * HERO_STOPS[i].at);
+          const p = path.getPointAtLength(len * heroStops[i].at);
           gsap.set(el, { x: p.x, y: p.y });
         });
 
@@ -119,7 +113,7 @@ export default function HomePage() {
               duration: 0.8,
               ease: "back.out(2.4)",
             },
-            0.3 + draw * HERO_STOPS[i].at,
+            0.3 + draw * heroStops[i].at,
           );
         });
 
@@ -198,6 +192,26 @@ export default function HomePage() {
     ScrollTrigger.refresh();
   }, [entries.length]);
 
+  // --------- Position the hero stops on the thread ----------
+  useEffect(() => {
+    const positions = entries
+      .slice(0, HERO_POSITIONS.length)
+      .map((entry, index) => ({
+        ...entry,
+        at: HERO_POSITIONS[index],
+      }));
+    if (!positions.length || !root.current) return;
+
+    const path = root.current.querySelector("#thread-path");
+    const stops = root.current.querySelectorAll(".hero-stop");
+    const length = path.getTotalLength();
+
+    stops.forEach((stop, index) => {
+      const point = path.getPointAtLength(length * positions[index].at);
+      gsap.set(stop, { x: point.x, y: point.y });
+    });
+  }, [entries]);
+
   // ---------- Interactions (respond to the user's actions) ----------
   const expandComposer = () => {
     gsap.to(extraRef.current, {
@@ -228,22 +242,27 @@ export default function HomePage() {
     });
   };
 
-  const save = (e) => {
+  // --------- Save a new entry to the database ----------
+  const save = async (e) => {
     e.preventDefault();
     if (!form.song.trim()) return;
-    // TODO: POST /api/entries, then prepend the saved entry returned by the server.
-    setEntries((list) => [
-      {
-        id: Date.now(),
-        song: form.song,
-        artist: form.artist,
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const savedEntry = await createEntry({
+        song: form.song.trim(),
+        artist: form.artist.trim(),
         mood: form.mood,
-        date: "Today",
-        note: form.note,
-      },
-      ...list,
-    ]);
-    setForm({ song: "", artist: "", note: "", mood: form.mood });
+        note: form.note.trim(),
+      });
+      setEntries((list) => [savedEntry, ...list]);
+      setForm({ song: "", artist: "", note: "", mood: form.mood });
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -289,9 +308,13 @@ export default function HomePage() {
             strokeWidth="2"
             strokeLinecap="round"
           />
-          {HERO_STOPS.map((s) => (
-            <g key={s.label} className="hero-stop">
-              <circle className="hero-dot" r="11" fill={MOODS[s.mood].color} />
+          {heroStops.map((s) => (
+            <g key={s.id} className="hero-stop">
+              <circle
+                className="hero-dot"
+                r="11"
+                fill={MOODS[s.mood]?.color || "#3A3358"}
+              />
               <text
                 className="hero-label"
                 y="-24"
@@ -299,7 +322,7 @@ export default function HomePage() {
                 fontSize="17"
                 fill="#A59FC0"
               >
-                {s.label}
+                {s.song}
               </text>
             </g>
           ))}
@@ -349,7 +372,6 @@ export default function HomePage() {
                 role="radiogroup"
                 aria-label="Emotion"
               >
-                {/* Create mood buttons by mapping over the MOODS object */}
                 {Object.entries(MOODS).map(([key, m]) => (
                   <button
                     key={key}
@@ -374,75 +396,91 @@ export default function HomePage() {
               </div>
               <button
                 type="submit"
+                disabled={isSaving}
                 className="button-primary px-5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E9E4F5]"
               >
-                Save entry
+                {isSaving ? "Saving..." : "Save entry"}
               </button>
             </div>
           </div>
         </form>
+        {error && (
+          <p role="alert" className="mt-3 text-sm text-red-300">
+            {error}
+          </p>
+        )}
       </section>
 
-      {/* Time capsule: resurfaces an old entry, opens on click */}
-      <section className="mx-auto max-w-3xl px-6 pb-14">
-        <div className="surface-card relative overflow-hidden">
-          <div className="p-6 sm:p-8">
-            <p className="text-muted text-sm">One year ago today</p>
-            <p className="serif-title mt-2">Night Changes</p>
-            <p className="text-subtle mt-3 max-w-prose leading-relaxed">
-              Drove home with the windows down. Didn't know yet how much would
-              change by this time next year.
-            </p>
-          </div>
-          <button
-            ref={capsuleCover}
-            onClick={openCapsule}
-            aria-label="Open this memory"
-            className="capsule-cover absolute inset-0 flex flex-col items-start justify-center gap-1 p-6 text-left sm:p-8"
-          >
-            <span className="display-serif text-2xl">A memory is waiting</span>
-            <span className="text-sm">Tap to open</span>
-          </button>
-        </div>
-      </section>
-
-      {/* Recent entries on a thread that fills as you scroll */}
-      <section className="mx-auto max-w-3xl px-6 pb-32">
-        <h2 className="display-serif text-3xl">Recently</h2>
-
-        <div className="entries relative mt-10 pl-10">
-          <div className="thread-line absolute left-2.75 top-2 bottom-2 w-0.5" />
-          <div className="thread-fill absolute left-2.75 top-2 bottom-2 w-0.5" />
-
-          <ul className="space-y-12">
-            {entries.map((e) => (
-              <li key={e.id} className="entry relative">
-                <span
-                  className="entry-dot absolute -left-10 top-1.5"
-                  data-color={MOODS[e.mood].color}
-                  style={{ backgroundColor: MOODS[e.mood].color }}
-                />
-                <p className="text-muted text-sm">{e.date}</p>
-                <p className="display-serif mt-1 text-2xl">
-                  {e.song}
-                  {e.artist && (
-                    <span className="text-muted text-base"> by {e.artist}</span>
-                  )}
+      {!isLoading && entries.length > 0 && (
+        <>
+          {/* Time capsule: resurfaces an old entry, opens on click */}
+          <section className="mx-auto max-w-3xl px-6 pb-14">
+            <div className="surface-card relative overflow-hidden">
+              <div className="p-6 sm:p-8">
+                <p className="text-muted text-sm">{capsuleEntry.date}</p>
+                <p className="serif-title mt-2">{capsuleEntry.song}</p>
+                <p className="text-subtle mt-3 max-w-prose leading-relaxed">
+                  {capsuleEntry.note || "No note was added for this entry."}
                 </p>
-                {e.note && (
-                  <p className="text-subtle mt-2 max-w-prose leading-relaxed">
-                    {e.note}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+              </div>
+              <button
+                ref={capsuleCover}
+                onClick={openCapsule}
+                aria-label="Open this memory"
+                className="capsule-cover absolute inset-0 flex flex-col items-start justify-center gap-1 p-6 text-left sm:p-8"
+              >
+                <span className="display-serif text-2xl">
+                  A memory is waiting
+                </span>
+                <span className="text-sm">Tap to open</span>
+              </button>
+            </div>
+          </section>
 
-        <a href="/timeline" className="button-outline mt-14 px-5 py-2">
-          See the full timeline
-        </a>
-      </section>
+          {/* Recent entries on a thread that fills as you scroll */}
+          <section className="mx-auto max-w-3xl px-6 pb-32">
+            <h2 className="display-serif text-3xl">Recently</h2>
+
+            <div className="entries relative mt-10 pl-10">
+              <div className="thread-line absolute left-2.75 top-2 bottom-2 w-0.5" />
+              <div className="thread-fill absolute left-2.75 top-2 bottom-2 w-0.5" />
+
+              <ul className="space-y-12">
+                {entries.map((e) => (
+                  <li key={e.id} className="entry relative">
+                    <span
+                      className="entry-dot absolute -left-10 top-1.5"
+                      data-color={MOODS[e.mood]?.color || "#3A3358"}
+                      style={{
+                        backgroundColor: MOODS[e.mood]?.color || "#3A3358",
+                      }}
+                    />
+                    <p className="text-muted text-sm">{e.date}</p>
+                    <p className="display-serif mt-1 text-2xl">
+                      {e.song}
+                      {e.artist && (
+                        <span className="text-muted text-base">
+                          {" "}
+                          by {e.artist}
+                        </span>
+                      )}
+                    </p>
+                    {e.note && (
+                      <p className="text-subtle mt-2 max-w-prose leading-relaxed">
+                        {e.note}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <a href="/timeline" className="button-outline mt-14 px-5 py-2">
+              See the full timeline
+            </a>
+          </section>
+        </>
+      )}
     </div>
   );
 }
