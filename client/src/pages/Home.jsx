@@ -7,6 +7,7 @@ import { createEntry, getEntries } from "../api/entry";
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 // Mood colors drive the whole app: hero dots, entry dots, chips, heatmap, retrospective.
+// (Move this to a shared file, e.g. src/constants/moods.js, once Timeline/Retrospective need it.)
 const MOODS = {
   joyful: { label: "Joyful", color: "#F2B84B" },
   melancholic: { label: "Melancholic", color: "#5BB8C9" },
@@ -21,6 +22,25 @@ const HERO_POSITIONS = [0.12, 0.38, 0.62, 0.86];
 const reduceMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// MongoDB documents come back with `_id`; support both shapes.
+const getId = (entry) => entry.id ?? entry._id;
+
+// Place each hero stop on the thread path. Single source of truth for positioning.
+function positionStops(container, positions) {
+  if (!container) return;
+  const path = container.querySelector("#thread-path");
+  if (!path) return;
+
+  const length = path.getTotalLength();
+  const stops = container.querySelectorAll(".hero-stop");
+
+  stops.forEach((stop, index) => {
+    if (positions[index] === undefined) return;
+    const point = path.getPointAtLength(length * positions[index]);
+    gsap.set(stop, { x: point.x, y: point.y });
+  });
+}
 
 export default function HomePage() {
   const root = useRef(null);
@@ -39,6 +59,8 @@ export default function HomePage() {
     mood: "joyful",
   });
   const [opened, setOpened] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
   const heroStops = entries
     .slice(0, HERO_POSITIONS.length)
     .map((entry, index) => ({
@@ -71,7 +93,7 @@ export default function HomePage() {
     };
   }, []);
 
-  // ---------- Page-load sequence ----------
+  // ---------- Page-load sequence (plays once, after loading finishes) ----------
   useGSAP(
     () => {
       if (isLoading) return;
@@ -80,14 +102,10 @@ export default function HomePage() {
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const path = root.current.querySelector("#thread-path");
+        if (!path) return;
         const len = path.getTotalLength();
 
-        // Place each stop on the path
-        const stops = gsap.utils.toArray(".hero-stop");
-        stops.forEach((el, i) => {
-          const p = path.getPointAtLength(len * heroStops[i].at);
-          gsap.set(el, { x: p.x, y: p.y });
-        });
+        positionStops(root.current, HERO_POSITIONS);
 
         gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
 
@@ -106,7 +124,10 @@ export default function HomePage() {
         );
 
         // Each dot blooms as the thread passes its position.
-        gsap.utils.toArray(".hero-dot").forEach((dot, i) => {
+        const dots = gsap.utils.toArray(".hero-dot");
+        dots.forEach((dot, i) => {
+          const at = HERO_POSITIONS[i];
+          if (at === undefined) return;
           tl.from(
             dot,
             {
@@ -115,44 +136,50 @@ export default function HomePage() {
               duration: 0.8,
               ease: "back.out(2.4)",
             },
-            0.3 + draw * heroStops[i].at,
+            0.3 + draw * at,
           );
         });
 
+        if (root.current.querySelector(".hero-label")) {
+          tl.from(
+            ".hero-label",
+            {
+              opacity: 0,
+              y: 8,
+              duration: 0.8,
+              ease: "power2.out",
+              stagger: 0.25,
+            },
+            1.2,
+          );
+        }
+
         tl.from(
-          ".hero-label",
-          {
-            opacity: 0,
-            y: 8,
-            duration: 0.8,
-            ease: "power2.out",
-            stagger: 0.25,
-          },
-          1.2,
-        ).from(
           ".composer",
           { opacity: 0, y: 24, duration: 1, ease: "power3.out" },
           1.4,
         );
 
         // Slow idle drift so the thread feels alive, not static.
-        gsap.to(".hero-dot", {
-          y: "+=7",
-          duration: 3.2,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-          stagger: { each: 0.5, from: "random" },
-          delay: 4,
-        });
-
+        if (dots.length) {
+          gsap.to(dots, {
+            y: "+=7",
+            duration: 3.2,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+            stagger: { each: 0.5, from: "random" },
+            delay: 4,
+          });
+        }
       });
 
       return () => mm.revert();
     },
     {
       scope: root,
-      dependencies: [isLoading, entries.length],
+      // Only the loading flag: saving an entry must not replay the intro.
+      dependencies: [isLoading],
       revertOnUpdate: true,
     },
   );
@@ -205,30 +232,21 @@ export default function HomePage() {
     ScrollTrigger.refresh();
   }, [entries.length]);
 
-  // --------- Position the hero stops on the thread ----------
+  // --------- Keep hero stops on the thread (runs for reduced-motion users too) ----------
   useEffect(() => {
-    const positions = entries
-      .slice(0, HERO_POSITIONS.length)
-      .map((entry, index) => ({
-        ...entry,
-        at: HERO_POSITIONS[index],
-      }));
-    if (!positions.length || !root.current) return;
+    if (isLoading || !entries.length) return;
+    positionStops(root.current, HERO_POSITIONS);
+  }, [entries, isLoading]);
 
-    const path = root.current.querySelector("#thread-path");
-    if (!path) return;
-
-    const stops = root.current.querySelectorAll(".hero-stop");
-    const length = path.getTotalLength();
-
-    stops.forEach((stop, index) => {
-      const point = path.getPointAtLength(length * positions[index].at);
-      gsap.set(stop, { x: point.x, y: point.y });
-    });
-  }, [entries]);
+  // --------- Hide collapsed composer fields from keyboard and screen readers ----------
+  useEffect(() => {
+    if (extraRef.current) extraRef.current.inert = !expanded;
+  }, [expanded, isLoading]);
 
   // ---------- Interactions (respond to the user's actions) ----------
   const expandComposer = () => {
+    if (expanded) return;
+    setExpanded(true);
     gsap.to(extraRef.current, {
       height: "auto",
       opacity: 1,
@@ -286,7 +304,7 @@ export default function HomePage() {
 
   return (
     <div ref={root} className="echoes-page">
-      {/* Navigation: three pages total. Swap <a> for react-router <Link>. */}
+      {/* Navigation: three pages total. Swap <a> for react-router <Link> to avoid full page reloads. */}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <a href="/" className="display-serif text-xl">
           Echoes
@@ -328,17 +346,18 @@ export default function HomePage() {
             strokeLinecap="round"
           />
           {heroStops.map((s) => (
-            <g key={s.id} className="hero-stop">
+            <g key={getId(s)} className="hero-stop">
               <circle
                 className="hero-dot"
                 r="11"
                 fill={MOODS[s.mood]?.color || "#3A3358"}
               />
+              {/* Labels are hidden on small screens, where the scaled-down text is unreadable. */}
               <text
-                className="hero-label"
+                className="hero-label hidden sm:block"
                 y="-24"
                 textAnchor="middle"
-                fontSize="17"
+                fontSize="20"
                 fill="#A59FC0"
               >
                 {s.song}
@@ -430,43 +449,51 @@ export default function HomePage() {
         )}
       </section>
 
-      {!isLoading && entries.length > 0 && (
+      {entries.length > 0 && (
         <>
-          {/* Time capsule: resurfaces an old entry, opens on click */}
-          <section className="mx-auto max-w-3xl px-6 pb-14">
-            <div className="surface-card relative overflow-hidden">
-              <div className="p-6 sm:p-8">
-                <p className="text-muted text-sm">{capsuleEntry.date}</p>
-                <p className="serif-title mt-2">{capsuleEntry.song}</p>
-                <p className="text-subtle mt-3 max-w-prose leading-relaxed">
-                  {capsuleEntry.note || "No note was added for this entry."}
-                </p>
+          {/* Time capsule: resurfaces an old entry, opens on click.
+              Guarded on capsuleEntry, which is null if the DB was empty on load. */}
+          {capsuleEntry && (
+            <section className="mx-auto max-w-3xl px-6 pb-14">
+              <div className="surface-card relative overflow-hidden">
+                <div className="p-6 sm:p-8">
+                  <p className="text-muted text-sm">{capsuleEntry.date}</p>
+                  <p className="serif-title mt-2">{capsuleEntry.song}</p>
+                  <p className="text-subtle mt-3 max-w-prose leading-relaxed">
+                    {capsuleEntry.note || "No note was added for this entry."}
+                  </p>
+                </div>
+                <button
+                  ref={capsuleCover}
+                  onClick={openCapsule}
+                  aria-label="Open this memory"
+                  aria-hidden={opened}
+                  tabIndex={opened ? -1 : 0}
+                  className={`capsule-cover absolute inset-0 flex flex-col items-start justify-center gap-1 p-6 text-left sm:p-8 ${
+                    opened ? "pointer-events-none" : ""
+                  }`}
+                >
+                  <span className="display-serif text-2xl">
+                    A memory is waiting
+                  </span>
+                  <span className="text-sm">Tap to open</span>
+                </button>
               </div>
-              <button
-                ref={capsuleCover}
-                onClick={openCapsule}
-                aria-label="Open this memory"
-                className="capsule-cover absolute inset-0 flex flex-col items-start justify-center gap-1 p-6 text-left sm:p-8"
-              >
-                <span className="display-serif text-2xl">
-                  A memory is waiting
-                </span>
-                <span className="text-sm">Tap to open</span>
-              </button>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Recent entries on a thread that fills as you scroll */}
           <section className="mx-auto max-w-3xl px-6 pb-32">
             <h2 className="display-serif text-3xl">Recently</h2>
 
             <div className="entries relative mt-10 pl-10">
+              {/* left-[11px] works on both Tailwind v3 and v4 (left-2.75 is v4 only) */}
               <div className="thread-line absolute left-2.75 top-2 bottom-2 w-0.5" />
               <div className="thread-fill absolute left-2.75 top-2 bottom-2 w-0.5" />
 
               <ul className="space-y-12">
                 {entries.map((e) => (
-                  <li key={e.id} className="entry relative">
+                  <li key={getId(e)} className="entry relative">
                     <span
                       className="entry-dot absolute -left-10 top-1.5"
                       data-color={MOODS[e.mood]?.color || "#3A3358"}
