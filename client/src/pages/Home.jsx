@@ -74,6 +74,8 @@ export default function HomePage() {
   // ---------- Page-load sequence ----------
   useGSAP(
     () => {
+      if (isLoading) return;
+
       const mm = gsap.matchMedia();
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
@@ -148,7 +150,11 @@ export default function HomePage() {
 
       return () => mm.revert();
     },
-    { scope: root },
+    {
+      scope: root,
+      dependencies: [isLoading, entries.length],
+      revertOnUpdate: true,
+    },
   );
 
   // ---------- Entry-dependent scroll animations ----------
@@ -210,6 +216,8 @@ export default function HomePage() {
     if (!positions.length || !root.current) return;
 
     const path = root.current.querySelector("#thread-path");
+    if (!path) return;
+
     const stops = root.current.querySelectorAll(".hero-stop");
     const length = path.getTotalLength();
 
@@ -271,6 +279,10 @@ export default function HomePage() {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return <div ref={root} className="echoes-page" />;
+  }
 
   return (
     <div ref={root} className="echoes-page">
