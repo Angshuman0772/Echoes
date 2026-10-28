@@ -7,19 +7,20 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 // Mood colors drive the whole app: hero dots, entry dots, chips, heatmap, retrospective.
 const MOODS = {
-  glow: { label: "Glow", color: "#F2B84B" },
-  tide: { label: "Tide", color: "#5BB8C9" },
-  bloom: { label: "Bloom", color: "#E58FB0" },
-  moss: { label: "Moss", color: "#8DBF8A" },
-  ember: { label: "Ember", color: "#E2674F" },
+  joyful: { label: "Joyful", color: "#F2B84B" },
+  melancholic: { label: "Melancholic", color: "#5BB8C9" },
+  romantic: { label: "Romantic", color: "#E58FB0" },
+  peaceful: { label: "Peaceful", color: "#8DBF8A" },
+  excited: { label: "Excited", color: "#E2674F" },
+  add: { label: "Add mood", color: "#3A3358" },
 };
 
 // Where the dots sit along the hero thread (0 to 1) and what they say.
 const HERO_STOPS = [
-  { at: 0.12, mood: "tide", label: "Dreams" },
-  { at: 0.38, mood: "bloom", label: "Sunset Lover" },
-  { at: 0.62, mood: "glow", label: "Holocene" },
-  { at: 0.86, mood: "ember", label: "Your next song" },
+  { at: 0.12, mood: "melancholic", label: "Dreams" },
+  { at: 0.38, mood: "romantic", label: "Sunset Lover" },
+  { at: 0.62, mood: "joyful", label: "Holocene" },
+  { at: 0.86, mood: "excited", label: "Your next song" },
 ];
 
 // Replace with data from your Express API.
@@ -28,7 +29,7 @@ const SAMPLE_ENTRIES = [
     id: 1,
     song: "Dreams",
     artist: "Fleetwood Mac",
-    mood: "tide",
+    mood: "melancholic",
     date: "Oct 24",
     note: "Played on repeat during the long bus ride back after exams.",
   },
@@ -36,7 +37,7 @@ const SAMPLE_ENTRIES = [
     id: 2,
     song: "Sunset Lover",
     artist: "Petit Biscuit",
-    mood: "bloom",
+    mood: "romantic",
     date: "Oct 19",
     note: "Rooftop, golden hour, nobody talking. It was enough.",
   },
@@ -44,7 +45,7 @@ const SAMPLE_ENTRIES = [
     id: 3,
     song: "Holocene",
     artist: "Bon Iver",
-    mood: "glow",
+    mood: "joyful",
     date: "Oct 11",
     note: "First quiet morning in weeks. Felt like starting over.",
   },
@@ -52,7 +53,7 @@ const SAMPLE_ENTRIES = [
     id: 4,
     song: "Mr. Brightside",
     artist: "The Killers",
-    mood: "ember",
+    mood: "excited",
     date: "Oct 02",
     note: "Hostel night, everyone screaming the chorus off-key.",
   },
@@ -68,7 +69,12 @@ export default function HomePage() {
   const capsuleCover = useRef(null);
 
   const [entries, setEntries] = useState(SAMPLE_ENTRIES);
-  const [form, setForm] = useState({ song: "", note: "", mood: "glow" });
+  const [form, setForm] = useState({
+    song: "",
+    artist: "",
+    note: "",
+    mood: "joyful",
+  });
   const [opened, setOpened] = useState(false);
 
   // ---------- Page-load sequence + scroll thread ----------
@@ -230,21 +236,18 @@ export default function HomePage() {
       {
         id: Date.now(),
         song: form.song,
-        artist: "",
+        artist: form.artist,
         mood: form.mood,
         date: "Today",
         note: form.note,
       },
       ...list,
     ]);
-    setForm({ song: "", note: "", mood: form.mood });
+    setForm({ song: "", artist: "", note: "", mood: form.mood });
   };
 
   return (
-    <div
-      ref={root}
-      className="echoes-page"
-    >
+    <div ref={root} className="echoes-page">
       {/* Navigation: three pages total. Swap <a> for react-router <Link>. */}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <a href="/" className="display-serif text-xl">
@@ -254,16 +257,8 @@ export default function HomePage() {
           <a href="/" className="is-active">
             Home
           </a>
-          <a
-            href="/timeline"
-          >
-            Timeline
-          </a>
-          <a
-            href="/retrospective"
-          >
-            Retrospective
-          </a>
+          <a href="/timeline">Timeline</a>
+          <a href="/retrospective">Retrospective</a>
         </nav>
       </header>
 
@@ -311,12 +306,8 @@ export default function HomePage() {
         </svg>
       </section>
 
-      {/* Composer: the note is the star, the song is the key */}
       <section className="mx-auto max-w-3xl px-6 py-10">
-        <form
-          onSubmit={save}
-          className="composer surface-card p-6 sm:p-8"
-        >
+        <form onSubmit={save} className="composer surface-card p-6 sm:p-8">
           <label htmlFor="song" className="sr-only">
             Song
           </label>
@@ -325,8 +316,19 @@ export default function HomePage() {
             value={form.song}
             onChange={(e) => setForm({ ...form, song: e.target.value })}
             onFocus={expandComposer}
-            placeholder="What are you listening to?"
+            placeholder="What were you listening to?"
             className="composer-input"
+          />
+          <label htmlFor="artist" className="sr-only">
+            Artist
+          </label>
+          <input
+            id="artist"
+            value={form.artist}
+            onChange={(e) => setForm({ ...form, artist: e.target.value })}
+            onFocus={expandComposer}
+            placeholder="Who was it by?"
+            className="composer-note mt-2"
           />
 
           <div ref={extraRef} className="h-0 overflow-hidden opacity-0">
@@ -345,8 +347,9 @@ export default function HomePage() {
               <div
                 className="flex flex-wrap gap-2"
                 role="radiogroup"
-                aria-label="Mood"
+                aria-label="Emotion"
               >
+                {/* Create mood buttons by mapping over the MOODS object */}
                 {Object.entries(MOODS).map(([key, m]) => (
                   <button
                     key={key}
@@ -397,9 +400,7 @@ export default function HomePage() {
             aria-label="Open this memory"
             className="capsule-cover absolute inset-0 flex flex-col items-start justify-center gap-1 p-6 text-left sm:p-8"
           >
-            <span className="display-serif text-2xl">
-              A memory is waiting
-            </span>
+            <span className="display-serif text-2xl">A memory is waiting</span>
             <span className="text-sm">Tap to open</span>
           </button>
         </div>
@@ -425,10 +426,7 @@ export default function HomePage() {
                 <p className="display-serif mt-1 text-2xl">
                   {e.song}
                   {e.artist && (
-                    <span className="text-muted text-base">
-                      {" "}
-                      by {e.artist}
-                    </span>
+                    <span className="text-muted text-base"> by {e.artist}</span>
                   )}
                 </p>
                 {e.note && (
@@ -441,10 +439,7 @@ export default function HomePage() {
           </ul>
         </div>
 
-        <a
-          href="/timeline"
-          className="button-outline mt-14 px-5 py-2"
-        >
+        <a href="/timeline" className="button-outline mt-14 px-5 py-2">
           See the full timeline
         </a>
       </section>
