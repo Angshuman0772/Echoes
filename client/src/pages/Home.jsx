@@ -4,18 +4,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { createEntry, getEntries } from "../api/entry";
 import Navbar from "../components/Navbar";
+import { MOODS } from "../constants/moods";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
-
-// Mood colors drive the whole app: hero dots, entry dots, chips, heatmap, retrospective.
-// (Move this to a shared file, e.g. src/constants/moods.js, once Timeline/Retrospective need it.)
-const MOODS = {
-  joyful: { label: "Joyful", color: "#D6A64B" },
-  melancholic: { label: "Melancholic", color: "#718A9B" },
-  romantic: { label: "Romantic", color: "#C98289" },
-  peaceful: { label: "Peaceful", color: "#80AAA0" },
-  excited: { label: "Excited", color: "#D77D58" },
-};
 
 // Where database entries sit along the hero thread (0 to 1).
 const HERO_POSITIONS = [0.12, 0.38, 0.62, 0.86];
