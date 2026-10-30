@@ -340,6 +340,7 @@ export default function HomePage() {
                 textAnchor="middle"
                 fontSize="20"
                 fill="#456155"
+                fontFamily="Young Serif"
               >
                 {s.song}
               </text>
