@@ -189,8 +189,8 @@ export default function HomePage() {
           ease: "none",
           scrollTrigger: {
             trigger: ".entries",
-            start: "top 60%",
-            end: "bottom 60%",
+            start: "top 75%",
+            end: "bottom 85%",
             scrub: true,
             invalidateOnRefresh: true,
           },
@@ -209,7 +209,7 @@ export default function HomePage() {
             ease: "back.out(2)",
             scrollTrigger: {
               trigger: el,
-              start: "top 65%",
+              start: "top 75%",
               toggleActions: "play none none reverse",
             },
           },
