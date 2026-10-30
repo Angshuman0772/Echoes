@@ -474,7 +474,7 @@ export default function HomePage() {
               <div className="thread-fill absolute left-2.75 top-2 bottom-2 w-0.5" />
 
               <ul className="space-y-12">
-                {entries.map((e) => (
+                {entries.slice(0, 5).map((e) => (
                   <li key={getId(e)} className="entry relative">
                     <span
                       className="entry-dot absolute -left-10 top-1.5"
