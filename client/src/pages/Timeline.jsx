@@ -75,7 +75,7 @@ export default function Timeline() {
             </span>
           </h1>
           <div className="overflow-hidden">
-            <p className="hero-line hero-subtitle text-subtle mt-6 max-w-lg text-lg leading-relaxed">
+            <p className="hero-line hero-subtitle display-serif text-accent mt-6 max-w-lg text-lg leading-relaxed">
               A place for the songs that carried a feeling, marked a season, or
               stayed with you long after they ended.
             </p>
