@@ -156,3 +156,10 @@
     border-radius: 9999px;
   }
 }
+
+.thread {
+  fill: none;
+  stroke: var(--echoes-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
