@@ -10,11 +10,11 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 // Mood colors drive the whole app: hero dots, entry dots, chips, heatmap, retrospective.
 // (Move this to a shared file, e.g. src/constants/moods.js, once Timeline/Retrospective need it.)
 const MOODS = {
-  joyful: { label: "Joyful", color: "#F2B84B" },
-  melancholic: { label: "Melancholic", color: "#5BB8C9" },
-  romantic: { label: "Romantic", color: "#E58FB0" },
-  peaceful: { label: "Peaceful", color: "#8DBF8A" },
-  excited: { label: "Excited", color: "#E2674F" },
+  joyful: { label: "Joyful", color: "#D6A64B" },
+  melancholic: { label: "Melancholic", color: "#718A9B" },
+  romantic: { label: "Romantic", color: "#C98289" },
+  peaceful: { label: "Peaceful", color: "#80AAA0" },
+  excited: { label: "Excited", color: "#D77D58" },
 };
 
 // Where database entries sit along the hero thread (0 to 1).
@@ -210,7 +210,7 @@ export default function HomePage() {
         const dot = el.querySelector(".entry-dot");
         gsap.fromTo(
           dot,
-          { scale: 0.6, backgroundColor: "#3A3358" },
+          { scale: 0.6, backgroundColor: "#456155" },
           {
             scale: 1,
             backgroundColor: dot.dataset.color,
@@ -330,7 +330,7 @@ export default function HomePage() {
             id="thread-path"
             d="M0,170 C150,60 260,250 420,160 S700,40 840,150 S1060,260 1200,110"
             fill="none"
-            stroke="#E9E4F5"
+            stroke="#B5C7D1"
             strokeOpacity="0.55"
             strokeWidth="2"
             strokeLinecap="round"
@@ -340,7 +340,7 @@ export default function HomePage() {
               <circle
                 className="hero-dot"
                 r="11"
-                fill={MOODS[s.mood]?.color || "#3A3358"}
+                fill={MOODS[s.mood]?.color || "#456155"}
               />
               {/* Labels are hidden on small screens, where the scaled-down text is unreadable. */}
               <text
@@ -348,7 +348,7 @@ export default function HomePage() {
                 y="-24"
                 textAnchor="middle"
                 fontSize="20"
-                fill="#A59FC0"
+                fill="#456155"
               >
                 {s.song}
               </text>
@@ -408,11 +408,11 @@ export default function HomePage() {
                     role="radio"
                     aria-checked={form.mood === key}
                     onClick={(e) => pickMood(e, key)}
-                    className="rounded-full px-3 py-1.5 text-sm transition-colors focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#E9E4F5]"
+                    className="focus-ring rounded-full px-3 py-1.5 text-sm transition-colors"
                     style={{
                       backgroundColor:
                         form.mood === key ? m.color : "transparent",
-                      color: form.mood === key ? "#1F1A33" : "#E9E4F5",
+                      color: form.mood === key ? "#fff" : m.color,
                       boxShadow:
                         form.mood === key
                           ? "none"
@@ -426,7 +426,7 @@ export default function HomePage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="button-primary px-5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E9E4F5]"
+                className="button-primary focus-ring px-5 py-2"
               >
                 {isSaving ? "Saving..." : "Save entry"}
               </button>
@@ -448,9 +448,9 @@ export default function HomePage() {
             <section className="mx-auto max-w-3xl px-6 pb-14">
               <div className="surface-card relative overflow-hidden">
                 <div className="p-6 sm:p-8">
-                  <p className="text-muted text-sm">{capsuleEntry.date}</p>
+                  <p className="text-accent text-sm">{capsuleEntry.date}</p>
                   <p className="serif-title mt-2">{capsuleEntry.song}</p>
-                  <p className="text-subtle mt-3 max-w-prose leading-relaxed">
+                  <p className="text-accent mt-3 max-w-prose leading-relaxed">
                     {capsuleEntry.note || "No note was added for this entry."}
                   </p>
                 </div>
@@ -487,23 +487,23 @@ export default function HomePage() {
                   <li key={getId(e)} className="entry relative">
                     <span
                       className="entry-dot absolute -left-10 top-1.5"
-                      data-color={MOODS[e.mood]?.color || "#3A3358"}
+                      data-color={MOODS[e.mood]?.color || "#456155"}
                       style={{
-                        backgroundColor: MOODS[e.mood]?.color || "#3A3358",
+                        backgroundColor: MOODS[e.mood]?.color || "#456155",
                       }}
                     />
-                    <p className="text-muted text-sm">{e.date}</p>
+                    <p className="text-accent text-sm">{e.date}</p>
                     <p className="display-serif mt-1 text-2xl">
                       {e.song}
                       {e.artist && (
-                        <span className="text-muted text-base">
+                        <span className="text-accent text-base">
                           {" "}
                           by {e.artist}
                         </span>
                       )}
                     </p>
                     {e.note && (
-                      <p className="text-subtle mt-2 max-w-prose leading-relaxed">
+                      <p className="text-accent mt-2 max-w-prose leading-relaxed">
                         {e.note}
                       </p>
                     )}

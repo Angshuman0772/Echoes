@@ -1,15 +1,30 @@
+import { NavLink } from "react-router";
+
 export default function Navbar() {
   return (
     <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-      <a href="/" className="display-serif text-xl">
+      <NavLink to="/" className="display-serif text-xl">
         Echoes
-      </a>
+      </NavLink>
       <nav className="site-nav flex gap-6 text-sm">
-        <a href="/" className="is-active">
+        <NavLink
+          to="/"
+          className={({ isActive }) => (isActive ? "is-active" : "")}
+        >
           Home
-        </a>
-        <a href="/timeline">Timeline</a>
-        <a href="/retrospective">Retrospective</a>
+        </NavLink>
+        <NavLink
+          to="/timeline"
+          className={({ isActive }) => (isActive ? "is-active" : "")}
+        >
+          Timeline
+        </NavLink>
+        <NavLink
+          to="/retrospective"
+          className={({ isActive }) => (isActive ? "is-active" : "")}
+        >
+          Retrospective
+        </NavLink>
       </nav>
     </header>
   );

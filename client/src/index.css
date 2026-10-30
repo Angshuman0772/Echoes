@@ -1,14 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --echoes-bg: #1f1a33;
-  --echoes-surface: #2a2342;
-  --echoes-text: #e9e4f5;
-  --echoes-muted: #a59fc0;
-  --echoes-subtle: #cfc8e8;
-  --echoes-placeholder: #6f6892;
-  --echoes-thread: #3a3358;
-  --echoes-accent: #e58fb0;
+  --echoes-bg: #e2e5e0;
+  --echoes-surface: #f4f6f2;
+  --echoes-text: #456155;
+  --echoes-thread: #b5c7d1;
+  --echoes-heading: #456155;
+  --echoes-accent: #80aaa0;
   --echoes-serif: "Young Serif", serif;
   --echoes-sans: "Figtree", sans-serif;
 }
@@ -24,6 +22,7 @@
   h1 {
     font-size: var(--text-5xl);
     font-weight: var(--font-semibold);
+    color: var(--echoes-heading);
   }
 }
 
@@ -38,10 +37,11 @@
 
   .display-serif {
     font-family: var(--echoes-serif);
+    color: var(--echoes-heading);
   }
 
   .site-nav {
-    color: var(--echoes-muted);
+    color: var(--echoes-accent);
   }
 
   .site-nav a {
@@ -55,11 +55,17 @@
 
   .surface-card {
     background-color: var(--echoes-surface);
+    color: var(--echoes-text);
     border-radius: 1.5rem;
+    box-shadow: 0 12px 30px rgb(69 97 85 / 0.12);
   }
 
-  .text-muted {
-    color: var(--echoes-muted);
+  .capsule-cover .display-serif {
+    color: var(--echoes-bg);
+  }
+
+  .text-accent {
+    color: var(--echoes-accent);
   }
 
   .text-subtle {
@@ -90,7 +96,7 @@
 
   .composer-input::placeholder,
   .composer-note::placeholder {
-    color: var(--echoes-placeholder);
+    color: var(--echoes-accent);
   }
 
   .button-primary {
@@ -126,8 +132,13 @@
     color: var(--echoes-bg);
   }
 
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--echoes-bg);
+    outline-offset: 2px;
+  }
+
   .capsule-cover {
-    background-color: var(--echoes-accent);
+    background: var(--echoes-accent);
     color: var(--echoes-bg);
   }
 
