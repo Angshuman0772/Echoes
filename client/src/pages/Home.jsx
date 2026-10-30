@@ -3,6 +3,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { createEntry, getEntries } from "../api/entry";
+import Navbar from "../components/Navbar";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -304,19 +305,8 @@ export default function HomePage() {
 
   return (
     <div ref={root} className="echoes-page">
-      {/* Navigation: three pages total. Swap <a> for react-router <Link> to avoid full page reloads. */}
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <a href="/" className="display-serif text-xl">
-          Echoes
-        </a>
-        <nav className="site-nav flex gap-6 text-sm">
-          <a href="/" className="is-active">
-            Home
-          </a>
-          <a href="/timeline">Timeline</a>
-          <a href="/retrospective">Retrospective</a>
-        </nav>
-      </header>
+      {/* Navigation */}
+      <Navbar />
 
       {/* Hero */}
       <section className="mx-auto max-w-5xl px-6 pt-10 pb-6">
@@ -367,6 +357,7 @@ export default function HomePage() {
         </svg>
       </section>
 
+      {/* Composer */}
       <section className="mx-auto max-w-3xl px-6 py-10">
         <form onSubmit={save} className="composer surface-card p-6 sm:p-8">
           <label htmlFor="song" className="sr-only">
