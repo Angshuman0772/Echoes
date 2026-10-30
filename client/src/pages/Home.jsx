@@ -90,87 +90,78 @@ export default function HomePage() {
     () => {
       if (isLoading) return;
 
-      const mm = gsap.matchMedia();
+      const path = root.current.querySelector("#thread-path");
+      if (!path) return;
+      const len = path.getTotalLength();
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const path = root.current.querySelector("#thread-path");
-        if (!path) return;
-        const len = path.getTotalLength();
+      positionStops(root.current, HERO_POSITIONS);
 
-        positionStops(root.current, HERO_POSITIONS);
+      gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
 
-        gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
+      // The one big moment: headline rises, the thread draws, dots bloom along it.
+      const draw = 2.8;
+      const tl = gsap.timeline();
+      tl.from(".hero-line", {
+        yPercent: 110,
+        duration: 1.2,
+        ease: "power4.out",
+        stagger: 0.14,
+      }).to(
+        path,
+        { strokeDashoffset: 0, duration: draw, ease: "sine.inOut" },
+        0.3,
+      );
 
-        // The one big moment: headline rises, the thread draws, dots bloom along it.
-        const draw = 2.8;
-        const tl = gsap.timeline();
-        tl.from(".hero-line", {
-          yPercent: 110,
-          duration: 1.2,
-          ease: "power4.out",
-          stagger: 0.14,
-        }).to(
-          path,
-          { strokeDashoffset: 0, duration: draw, ease: "sine.inOut" },
-          0.3,
-        );
-
-        // Each dot blooms as the thread passes its position.
-        const dots = gsap.utils.toArray(".hero-dot");
-        dots.forEach((dot, i) => {
-          const at = HERO_POSITIONS[i];
-          if (at === undefined) return;
-          tl.from(
-            dot,
-            {
-              scale: 0,
-              transformOrigin: "50% 50%",
-              duration: 0.8,
-              ease: "back.out(2.4)",
-            },
-            0.3 + draw * at,
-          );
-        });
-
-        if (root.current.querySelector(".hero-label")) {
-          tl.from(
-            ".hero-label",
-            {
-              opacity: 0,
-              y: 8,
-              duration: 0.8,
-              ease: "power2.out",
-              stagger: 0.25,
-            },
-            1.2,
-          );
-        }
-
+      // Each dot blooms as the thread passes its position.
+      const dots = gsap.utils.toArray(".hero-dot");
+      dots.forEach((dot, i) => {
+        const at = HERO_POSITIONS[i];
+        if (at === undefined) return;
         tl.from(
-          ".composer",
-          { opacity: 0, y: 24, duration: 1, ease: "power3.out" },
-          1.4,
+          dot,
+          {
+            scale: 0,
+            transformOrigin: "50% 50%",
+            duration: 0.8,
+            ease: "back.out(2.4)",
+          },
+          0.3 + draw * at,
         );
-
-        // Slow idle drift so the thread feels alive, not static.
-        if (dots.length) {
-          gsap.to(dots, {
-            y: "+=7",
-            duration: 3.2,
-            ease: "sine.inOut",
-            yoyo: true,
-            repeat: -1,
-            stagger: { each: 0.5, from: "random" },
-            delay: 4,
-          });
-        }
       });
 
-      return () => mm.revert();
+      tl.from(
+        ".hero-label",
+        {
+          opacity: 0,
+          y: 8,
+          duration: 0.8,
+          ease: "power2.out",
+          stagger: 0.25,
+        },
+        1.2,
+      );
+
+      tl.from(
+        ".composer",
+        { opacity: 0, y: 24, duration: 1, ease: "power3.out" },
+        1.4,
+      );
+
+      // Slow idle drift so the thread feels alive, not static.
+      if (dots.length) {
+        gsap.to(dots, {
+          y: "+=7",
+          duration: 3.2,
+          ease: "sine.inOut",
+          yoyo: true,
+          repeat: -1,
+          stagger: { each: 0.5, from: "random" },
+          delay: 4,
+        });
+      }
     },
     {
       scope: root,
-      // Only the loading flag: saving an entry must not replay the intro.
       dependencies: [isLoading],
       revertOnUpdate: true,
     },

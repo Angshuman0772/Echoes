@@ -97,16 +97,13 @@ export default function Timeline() {
   useGSAP(
     () => {
       if (isLoading) return;
-      const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from(".hero-line", {
-          yPercent: 110,
-          duration: 1.2,
-          ease: "power4.out",
-          stagger: 0.14,
-        });
+
+      gsap.from(".hero-line", {
+        yPercent: 110,
+        duration: 1.2,
+        ease: "power4.out",
+        stagger: 0.14,
       });
-      return () => mm.revert();
     },
     { scope: root, dependencies: [isLoading], revertOnUpdate: true },
   );
@@ -115,30 +112,27 @@ export default function Timeline() {
   useGSAP(
     () => {
       if (isLoading || !ready) return;
-      const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const tl = gsap.timeline({ delay: 0.9 }); // let the hero land first
 
-        tl.from(".snake-dot", {
-          scale: 0,
-          duration: 0.7,
-          ease: "back.out(2.4)",
-          stagger: 0.18,
-        });
+      const tl = gsap.timeline({ delay: 0.9 }); // let the hero land first
 
-        tl.from(
-          ".snake-text",
-          {
-            opacity: 0,
-            y: 16,
-            duration: 0.6,
-            ease: "power3.out",
-            stagger: 0.18,
-          },
-          0.15,
-        );
+      tl.from(".snake-dot", {
+        scale: 0,
+        duration: 0.7,
+        ease: "back.out(2.4)",
+        stagger: 0.18,
       });
-      return () => mm.revert();
+
+      tl.from(
+        ".snake-text",
+        {
+          opacity: 0,
+          y: 16,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.18,
+        },
+        0.15,
+      );
     },
     {
       scope: root,
